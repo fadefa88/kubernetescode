@@ -4,6 +4,18 @@ app = Flask(__name__)
 
 @app.route('/')
 def hello_world():
-    with open('templates/index.html', 'r') as file:
-        html_content = file.read()
-    return html_content
+    html_code = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Flask HTML Example</title>
+    </head>
+    <body>
+        <h1>Hello, world!</h1>
+        <p>This is a paragraph.</p>
+    </body>
+    </html>
+    """
+    return html_code
