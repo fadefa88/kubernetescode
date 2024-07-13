@@ -3,4 +3,4 @@ app = Flask(__name__)
 
 @app.route('/')
 def hello_world():
-    return 'This is my custom docker application!'
+    return 'This is my custom docker application! Aggiornato!'
