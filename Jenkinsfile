@@ -7,18 +7,15 @@ pipeline {
     }
     
     stages {
-        stage('Setup Credentials') {
-            steps {
-                script {
-                    sh 'mkdir -p ~/.config/containers'
-                    sh 'echo \'[plugins."io.containerd.grpc.v1.cri".registry]\' > ~/.config/containers/registries.conf'
-                    sh 'echo \'  credential-helpers = ["desktop"]\' >> ~/.config/containers/registries.conf'
+        stage('Setup Credentials') {
+            steps {
+                script {
+                    sh 'mkdir -p ~/.config/containers'
+                    sh 'echo \'[plugins."io.containerd.grpc.v1.cri".registry]\' > ~/.config/containers/registries.conf'
+                    sh 'echo \'  credential-helpers = ["desktop"]\' >> ~/.config/containers/registries.conf'
                 }
             }
         }
-
-
-        
         stage('Build and Test Image') {
             steps {
                 script {
