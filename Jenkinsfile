@@ -55,11 +55,13 @@ pipeline {
         stage('TMAS Scan') {
             steps {
                 script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'docker') {
                     // Install TMAS CLI
                     sh "mkdir -p $TMAS_HOME"
                     sh "curl -L https://cli.artifactscan.cloudone.trendmicro.com/tmas-cli/latest/tmas-cli_Linux_x86_64.tar.gz | tar xz -C $TMAS_HOME"
                     // Esegui il comando tmas scan con il digest ottenuto
                     sh "$TMAS_HOME/tmas scan --vulnerabilities --malware --secrets registry:docker/test@${env.IMAGE_DIGEST} --region eu-central-1"
+                    }
                 }
             }
         }
