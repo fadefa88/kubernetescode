@@ -7,6 +7,15 @@ pipeline {
     }
     
     stages {
+        stage('Setup Credentials') {
+            steps {
+                script {
+                    // Add the credential-helpers string to the registries.conf file
+                    sh 'echo \'[plugins."io.containerd.grpc.v1.cri".registry]\' > ~/.config/containers/registries.conf'
+                    sh 'echo \'  credential-helpers = ["desktop"]\' >> ~/.config/containers/registries.conf'
+                }
+            }
+        }
         stage('Build and Test Image') {
             steps {
                 script {
