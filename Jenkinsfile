@@ -59,7 +59,8 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: 'docker', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
                     }
-                    
+                                        // Controlla e imposta le autorizzazioni per il file di autenticazione Docker
+                    sh 'chmod 644 /run/containers/111/auth.json || true'
                     // Esegui il comando tmas scan con il digest ottenuto
                     sh "$TMAS_HOME/tmas scan --vulnerabilities --malware --secrets registry:fadefa88/test@${env.IMAGE_DIGEST} --region eu-central-1"
                     
