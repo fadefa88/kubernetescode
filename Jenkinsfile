@@ -7,21 +7,22 @@ pipeline {
     }
     
     stages {
-        stage('Setup Credentials') {
+stage('Setup Credentials') {
             steps {
                 script {
                     // Ensure the configuration directory exists
                     sh 'mkdir -p ~/.config/containers'
-                    // Add the credential-helpers string to the registries.conf file
+                    // Add the credential-helpers string to the registries.conf file in proper TOML format
                     sh """
                     cat <<EOF > ~/.config/containers/registries.conf
                     [plugins."io.containerd.grpc.v1.cri".registry]
-                      credential-helpers = ["desktop"]
+                    credential-helpers = ["desktop"]
                     EOF
                     """
                 }
             }
         }
+        
         stage('Build and Test Image') {
             steps {
                 script {
