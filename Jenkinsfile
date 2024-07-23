@@ -7,19 +7,7 @@ pipeline {
     }
     
     stages {
-        stage('First Pipeline - TMAS Scan') {
-            steps {
-                // Install TMAS CLI
-                sh "mkdir -p $TMAS_HOME"
-                sh "curl -L https://cli.artifactscan.cloudone.trendmicro.com/tmas-cli/latest/tmas-cli_Linux_x86_64.tar.gz | tar xz -C $TMAS_HOME"
-
-                // Scan with TMAS
-                sh "$TMAS_HOME/tmas scan secrets docker:fadefa88/test:latest --region eu-central-1"
-                sh "$TMAS_HOME/tmas scan docker:fadefa88/test:latest --region eu-central-1"
-            }
-        }
-        
-        stage('Second Pipeline - Build and Test Image') {
+        stage('Build and Test Image') {
             steps {
                 script {
                     def app
@@ -39,6 +27,34 @@ pipeline {
                     docker.withRegistry('https://registry.hub.docker.com', 'docker') {
                         app.push("${env.BUILD_NUMBER}")
                     }
+                }
+            }
+        }
+        
+        stage('Get Image Digest') {
+            steps {
+                script {
+                    // Ottieni il digest dell'immagine
+                    sh 'docker pull fadefa88/test:latest'
+                    def digest = sh(
+                        script: "docker inspect --format='{{index .RepoDigests 0}}' fadefa88/test:latest",
+                        returnStdout: true
+                    ).trim()
+                    
+                    // Estrai solo la parte SHA
+                    def sha = digest.split('@')[1]
+                    echo "Image digest: ${sha}"
+                    
+                    // Salva il digest in una variabile d'ambiente per i passaggi successivi
+                    env.IMAGE_DIGEST = sha
+                }
+            }
+        }
+        stage('TMAS Scan') {
+            steps {
+                script {
+                    // Esegui il comando tmas scan con il digest ottenuto
+                    sh "tmas scan registry:docker/test@${env.IMAGE_DIGEST} --region eu-central-1"
                 }
             }
         }
