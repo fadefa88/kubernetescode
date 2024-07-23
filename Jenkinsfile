@@ -10,12 +10,19 @@ pipeline {
         stage('Setup Credentials') {
             steps {
                 script {
+                    // Ensure the configuration directory exists
                     sh 'mkdir -p ~/.config/containers'
-                    sh 'echo \'[plugins."io.containerd.grpc.v1.cri".registry]\' > ~/.config/containers/registries.conf'
-                    sh 'echo \'  credential-helpers = ["desktop"]\' >> ~/.config/containers/registries.conf'
-                }
-            }
-        }
+                    // Write the correct TOML configuration to registries.conf
+                    sh """
+                    cat > ~/.config/containers/registries.conf <<EOF
+                    [plugins."io.containerd.grpc.v1.cri".registry]
+                      credential-helpers = ["desktop"]
+                    EOF
+                    """
+                }
+            }
+        }
+        
         stage('Build and Test Image') {
             steps {
                 script {
@@ -45,26 +52,27 @@ pipeline {
         stage('Get Image Digest') {
             steps {
                 script {
-                    // Ottieni il digest dell'immagine
+                    // Pull the image to get its digest
                     sh 'docker pull fadefa88/test:latest'
                     def digest = sh(
                         script: "docker inspect --format='{{index .RepoDigests 0}}' fadefa88/test:latest",
                         returnStdout: true
                     ).trim()
                     
-                    // Estrai solo la parte SHA
+                    // Extract only the SHA part
                     def sha = digest.split('@')[1]
                     echo "Image digest: ${sha}"
                     
-                    // Salva il digest in una variabile d'ambiente per i passaggi successivi
+                    // Save the digest in an environment variable for subsequent steps
                     env.IMAGE_DIGEST = sha
                 }
             }
         }
+        
         stage('TMAS Scan') {
             steps {
                 script {
-                    // Effettua il login a Docker Hub
+                    // Login to Docker Hub
                     withCredentials([usernamePassword(credentialsId: 'docker', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
                     }
@@ -72,11 +80,11 @@ pipeline {
                     sh "mkdir -p $TMAS_HOME"
                     sh "curl -L https://cli.artifactscan.cloudone.trendmicro.com/tmas-cli/latest/tmas-cli_Linux_x86_64.tar.gz | tar xz -C $TMAS_HOME"
                     
-                    // Esegui il comando tmas scan con il digest ottenuto
+                    // Execute the tmas scan command with the obtained digest
                     sh 'cat ~/.docker/config.json'
                     sh "$TMAS_HOME/tmas scan --vulnerabilities --malware --secrets registry:fadefa88/test@${env.IMAGE_DIGEST} --region eu-central-1 -vvv"
                     
-                    // Effettua il logout da Docker Hub
+                    // Logout from Docker Hub
                     sh 'docker logout'
                 }
             }
