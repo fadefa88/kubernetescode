@@ -23,11 +23,10 @@ pipeline {
                         sh 'echo "Tests passed"'
                     }
 
-                    // Push image
+                    // Push image with build number and latest tag
                     docker.withRegistry('https://registry.hub.docker.com', 'docker') {
                         app.push("${env.BUILD_NUMBER}")
-                        app.push("latest") // Ensure we have a latest tag
-
+                        app.push("latest")
                     }
                 }
             }
@@ -36,7 +35,7 @@ pipeline {
         stage('Get Image Digest') {
             steps {
                 script {
-                    // Pull the image to get its digest
+                    // Pull the latest image to get its digest
                     sh 'docker pull fadefa88/test:latest'
                     def digest = sh(
                         script: "docker inspect --format='{{index .RepoDigests 0}}' fadefa88/test:latest",
@@ -60,13 +59,14 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: 'docker', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
                         sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
                     }
+                    
                     // Install TMAS
                     sh "mkdir -p $TMAS_HOME"
                     sh "curl -L https://cli.artifactscan.cloudone.trendmicro.com/tmas-cli/latest/tmas-cli_Linux_x86_64.tar.gz | tar xz -C $TMAS_HOME"
                     
                     // Execute the tmas scan command with the obtained digest
                     sh 'cat ~/.docker/config.json'
-                    sh "$TMAS_HOME/tmas scan --vulnerabilities --secrets registry:fadefa88/test@${env.IMAGE_DIGEST} --region eu-central-1"
+                    sh "$TMAS_HOME/tmas scan --vulnerabilities registry:fadefa88/test@${env.IMAGE_DIGEST} --region eu-central-1"
                     
                     // Logout from Docker Hub
                     sh 'docker logout'
