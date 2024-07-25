@@ -7,22 +7,6 @@ pipeline {
     }
     
     stages {
-        stage('Setup Credentials') {
-            steps {
-                script {
-                    // Ensure the configuration directory exists
-                    sh 'mkdir -p ~/.config/containers'
-                    // Write the correct TOML configuration to registries.conf
-                    sh """
-                    cat > ~/.config/containers/registries.conf <<EOF
-                    [plugins."io.containerd.grpc.v1.cri".registry]
-                      credential-helpers = ["desktop"]
-                    EOF
-                    """
-                }
-            }
-        }
-        
         stage('Build and Test Image') {
             steps {
                 script {
@@ -82,7 +66,7 @@ pipeline {
                     
                     // Execute the tmas scan command with the obtained digest
                     sh 'cat ~/.docker/config.json'
-                    sh "$TMAS_HOME/tmas scan --vulnerabilities --malware --secrets registry:fadefa88/test@${env.IMAGE_DIGEST} --region eu-central-1 -vvv"
+                    sh "$TMAS_HOME/tmas scan --vulnerabilities --secrets registry:fadefa88/test@${env.IMAGE_DIGEST} --region eu-central-1"
                     
                     // Logout from Docker Hub
                     sh 'docker logout'
